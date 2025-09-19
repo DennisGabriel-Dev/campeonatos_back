@@ -1,0 +1,23 @@
+{
+  "name": "campeonatos_back",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DennisGabriel-Dev/campeonatos_back.git"
+  },
+  "author": "Dennis, Lauanderson, Handson, Fran Das Dores",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DennisGabriel-Dev/campeonatos_back/issues"
+  },
+  "homepage": "https://github.com/DennisGabriel-Dev/campeonatos_back#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
