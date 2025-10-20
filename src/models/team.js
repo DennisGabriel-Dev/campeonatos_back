@@ -17,6 +17,4 @@ const Team = sequelize.define('Team', {
   }
 })
 
-Team.sync();
-
 export default Team;
