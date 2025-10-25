@@ -3,9 +3,9 @@ import dotenv from 'dotenv'
 dotenv.config()
 const env = process.env
 
-const sequelize = new Sequelize(env.DATABASE_NAME, env.DATABASE_USER, env.DATABASE_PASSWORD, {
+const sequelize = new Sequelize(env.DATABASE_NAME, env.DATABASE_USER, process.env.DATABASE_PASSWORD, {
   host: env.DATABASE_HOST,
-  dialect: env.DATABASE_DIALECT
+  dialect: "postgres"
 });
 
 sequelize.authenticate().then(() => {

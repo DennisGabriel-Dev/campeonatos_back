@@ -1,13 +1,20 @@
 import express from 'express'
+import cors from 'cors'
 import teamRoutes from './routes/teamRoutes.js'
 import playerRoutes from './routes/playerRoutes.js'
 import classRoutes from './routes/classRoutes.js'
 import './models/associations.js'
 
 const app = express()
-const port = 3000
+const port = process.env.PORT 
 
 app.use(express.json())
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*', // permite o frontend acessar o back
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // métodos liberados
+  credentials: true // se quiser enviar cookies/autenticação
+}));
 
 app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
