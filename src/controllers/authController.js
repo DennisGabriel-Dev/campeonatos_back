@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { Op } from 'sequelize'
 import User from '../models/user.js'
 
 // Registrar novo usuário
@@ -137,6 +138,50 @@ export const getProfile = async (req, res) => {
   }
 }
 
+// Login com Google
+export const googleLogin = async (req, res) => {
+  try {
+    const { email, name, picture } = req.body
+
+    // Verificar se usuário já existe
+    let user = await User.findOne({ where: { email } })
+    
+    if (!user) {
+      // Criar novo usuário
+      user = await User.create({
+        name,
+        email,
+        password: '', // Sem senha para OAuth
+        role: 'user'
+      })
+    }
+
+    // Gerar token JWT
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '24h' }
+    )
+
+    res.json({
+      message: 'Login com Google realizado com sucesso',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    })
+
+  } catch (error) {
+    console.error('Erro no login do Google:', error)
+    res.status(500).json({
+      error: 'Erro interno do servidor'
+    })
+  }
+}
+
 // Atualizar perfil do usuário
 export const updateProfile = async (req, res) => {
   try {
@@ -146,8 +191,10 @@ export const updateProfile = async (req, res) => {
     // Verificar se email já existe em outro usuário
     if (email && email !== user.email) {
       const existingUser = await User.findOne({ 
-        where: { email },
-        where: { id: { [sequelize.Op.ne]: user.id } }
+        where: { 
+          email,
+          id: { [Op.ne]: user.id }
+        }
       })
       if (existingUser) {
         return res.status(409).json({
