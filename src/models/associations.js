@@ -1,6 +1,7 @@
 import Team from './team.js';
 import Player from './player.js';
 import Class from './class.js';
+import User from './user.js';
 import sequelize from '../config/database.js';
 
 // Relacionamentos Team <-> Player
@@ -29,6 +30,7 @@ Player.belongsTo(Class, {
 const syncDatabase = async () => {
   try {
     // Primeiro sincroniza as tabelas independentes
+    await User.sync();
     await Team.sync();
     await Class.sync();
     
@@ -44,4 +46,4 @@ const syncDatabase = async () => {
 // Executar a sincronização
 syncDatabase();
 
-export { Team, Player, Class };
+export { User, Team, Player, Class };
