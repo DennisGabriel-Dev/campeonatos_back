@@ -3,6 +3,7 @@ import cors from 'cors'
 import teamRoutes from './routes/teamRoutes.js'
 import playerRoutes from './routes/playerRoutes.js'
 import classRoutes from './routes/classRoutes.js'
+import championshipRoutes from './routes/championshipRoutes.js'
 import './models/associations.js'
 
 const app = express()
@@ -19,6 +20,7 @@ app.use(cors({
 app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
 app.use('/classes', classRoutes)
+app.use('/championships', championshipRoutes)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
