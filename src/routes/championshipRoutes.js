@@ -1,7 +1,10 @@
 import express from 'express';
 import ChampionshipController from '../controllers/championshipController.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+// aplica os middlewares de autenticação a todas as rotas desse router
+router.use(authenticateToken, requireAdmin);
 
 // Rotas básicas do CRUD
 router.get('/', ChampionshipController.getChampionships);
