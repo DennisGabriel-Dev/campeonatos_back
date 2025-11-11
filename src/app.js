@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import teamRoutes from './routes/teamRoutes.js'
 import playerRoutes from './routes/playerRoutes.js'
 import classRoutes from './routes/classRoutes.js'
+import championshipRoutes from './routes/championshipRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import './models/associations.js'
 
@@ -28,6 +29,7 @@ app.use('/auth', authRoutes)
 app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
 app.use('/classes', classRoutes)
+app.use('/championships', championshipRoutes)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

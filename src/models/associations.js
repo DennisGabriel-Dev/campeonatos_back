@@ -3,6 +3,7 @@ import Player from './player.js';
 import Class from './class.js';
 import User from './user.js';
 import sequelize from '../config/database.js';
+import Championship from './championship.js';
 
 // Relacionamentos Team <-> Player
 Team.hasMany(Player, {
@@ -36,6 +37,8 @@ const syncDatabase = async () => {
     
     // Depois sincroniza a tabela que depende das outras
     await Player.sync();
+
+    await Championship.sync()
     
     console.log('Todas as tabelas foram sincronizadas com sucesso!');
   } catch (error) {
