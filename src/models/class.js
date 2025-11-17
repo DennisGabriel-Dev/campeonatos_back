@@ -32,7 +32,7 @@ const Class = sequelize.define('Class', {
     }
   },
   semester: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.ENUM('1', '2'),
     allowNull: false
   },
   course: {

@@ -2,8 +2,9 @@ import Team from './team.js';
 import Player from './player.js';
 import Class from './class.js';
 import User from './user.js';
-import sequelize from '../config/database.js';
 import Championship from './championship.js';
+import Match from './match.js';
+import MatchTeam from './match_team.js';
 
 // Relacionamentos Team <-> Player
 Team.hasMany(Player, {
@@ -27,6 +28,39 @@ Player.belongsTo(Class, {
   as: 'class'
 });
 
+// Relacionamentos Championship <-> Match
+Championship.hasMany(Match, {
+  foreignKey: 'championshipId',
+  as: 'matches'
+});
+
+Match.belongsTo(Championship, {
+  foreignKey: 'championshipId',
+  as: 'championship'
+});
+
+// Relacionamentos Match <-> MatchTeam
+Match.hasMany(MatchTeam, {
+  foreignKey: 'matchId',
+  as: 'matchTeams'
+});
+
+MatchTeam.belongsTo(Match, {
+  foreignKey: 'matchId',
+  as: 'match'
+});
+
+// Relacionamento Team <-> MatchTeam
+Team.hasMany(MatchTeam, {
+  foreignKey: 'teamId',
+  as: 'matchAppearances'
+});
+
+MatchTeam.belongsTo(Team, {
+  foreignKey: 'teamId',
+  as: 'team'
+});
+
 // Sincronizar as tabelas na ordem correta
 const syncDatabase = async () => {
   try {
@@ -38,7 +72,9 @@ const syncDatabase = async () => {
     // Depois sincroniza a tabela que depende das outras
     await Player.sync();
 
-    await Championship.sync()
+    await Championship.sync();
+    await Match.sync();
+    await MatchTeam.sync();
     
     console.log('Todas as tabelas foram sincronizadas com sucesso!');
   } catch (error) {
@@ -49,4 +85,4 @@ const syncDatabase = async () => {
 // Executar a sincronização
 syncDatabase();
 
-export { User, Team, Player, Class };
+export { User, Team, Player, Class, Championship, Match, MatchTeam };
