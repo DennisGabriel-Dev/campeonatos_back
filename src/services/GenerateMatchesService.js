@@ -66,7 +66,8 @@ const GenerateMatches = async ({ championship, teamIds }) => {
     for (const [homeTeamId, awayTeamId] of matchPairs) {
       const match = await Match.create({
         championshipId: championship.id,
-        status: 0
+        status: 0,
+        playDay: new Date()
       }, { transaction });
 
       await MatchTeam.bulkCreate([
