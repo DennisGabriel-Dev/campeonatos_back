@@ -1,4 +1,5 @@
 import Championship from "../models/championship.js";
+import GenerateMatches from "../services/GenerateMatchesService.js";
 
 const ChampionshipController = {
   async getChampionships(req, res) {
@@ -109,6 +110,36 @@ const ChampionshipController = {
       } else {
         res.status(404).json({ error: 'Campeonato não encontrado!' });
       }
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Erro interno do servidor', 
+        details: error.message 
+      });
+    }
+  },
+
+  async generateMatches(req, res) {
+    try {
+      const { id } = req.params;
+      const champItem = await Championship.findByPk(id);
+      const { teamIds } = req.body ?? {};
+
+      if (champItem == null) {
+        return res.status(404).json({ error: 'Campeonato não encontrado!' });
+      }
+
+      const response = await GenerateMatches({
+        championship: champItem,
+        teamIds
+      });
+
+      if (!response) {
+        return res.status(500).json({
+          error: 'Erro ao processar geração de partidas'
+        });
+      }
+
+      res.status(response.status).json(response);
     } catch (error) {
       res.status(500).json({ 
         error: 'Erro interno do servidor', 

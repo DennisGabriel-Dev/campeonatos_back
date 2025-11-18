@@ -13,5 +13,6 @@ router.get('/:id', ChampionshipController.getChampionshipById);
 router.put('/:id', ChampionshipController.updateChampionship);
 router.patch('/:id', ChampionshipController.updateChampionship);
 router.delete('/:id', ChampionshipController.deleteChampionship);
+router.post('/:id', ChampionshipController.generateMatches);
 
 export default router;

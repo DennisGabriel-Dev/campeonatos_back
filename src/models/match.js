@@ -7,6 +7,10 @@ const Match = sequelize.define('Match', {
     primaryKey: true,
     autoIncrement: true
   },
+  championshipId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
   playDay: {
     type: DataTypes.DATE
   },
