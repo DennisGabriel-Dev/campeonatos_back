@@ -23,6 +23,13 @@ const Championship = sequelize.define('Championship', {
       min: 2020,
       max: 2030
     }
+  },
+  modality: {
+    type: DataTypes.ENUM('Futebol', 'Vôlei'),
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   }
 }, {
   tableName: 'championships',

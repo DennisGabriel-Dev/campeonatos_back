@@ -9,10 +9,14 @@ router.use(authenticateToken, requireAdmin);
 // Rotas básicas do CRUD
 router.get('/', ChampionshipController.getChampionships);
 router.post('/', ChampionshipController.createChampionShip);
+router.get('/:id/ranking', ChampionshipController.getRanking);
+router.get('/:id/teams', ChampionshipController.getChampionshipTeams);
+router.post('/:id/teams', ChampionshipController.addTeamToChampionship);
+router.delete('/:id/teams/:teamId', ChampionshipController.removeTeamFromChampionship);
+router.post('/:id/generate-matches', ChampionshipController.generateMatches);
 router.get('/:id', ChampionshipController.getChampionshipById);
 router.put('/:id', ChampionshipController.updateChampionship);
 router.patch('/:id', ChampionshipController.updateChampionship);
 router.delete('/:id', ChampionshipController.deleteChampionship);
-router.post('/:id', ChampionshipController.generateMatches);
 
 export default router;
