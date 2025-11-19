@@ -21,11 +21,11 @@ FRONTEND_URL=http://localhost:3000
 obs: antes de executar, o banco de dados com o nome presente no DATABASE_NAME deve estar criado previamente no postgreSQL.
 
 
-## 3. Executar:
+## 3. Dentro do Repositório executar:
 ```
-node app.js
+nodemon ./src/app.js
 ```
 ou
 ```
-nodemon app.js
+node ./src/app.js
 ``` 
