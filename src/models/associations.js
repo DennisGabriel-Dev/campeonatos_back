@@ -5,6 +5,7 @@ import User from './user.js';
 import Championship from './championship.js';
 import Match from './match.js';
 import MatchTeam from './match_team.js';
+import ChampionshipTeam from './championship_team.js';
 
 // Relacionamentos Team <-> Player
 Team.hasMany(Player, {
@@ -61,20 +62,98 @@ MatchTeam.belongsTo(Team, {
   as: 'team'
 });
 
+// Relacionamentos Championship <-> Team (many-to-many)
+Championship.belongsToMany(Team, {
+  through: ChampionshipTeam,
+  foreignKey: 'championshipId',
+  otherKey: 'teamId',
+  as: 'teams'
+});
+
+Team.belongsToMany(Championship, {
+  through: ChampionshipTeam,
+  foreignKey: 'teamId',
+  otherKey: 'championshipId',
+  as: 'championships'
+});
+
+ChampionshipTeam.belongsTo(Championship, {
+  foreignKey: 'championshipId',
+  as: 'championship'
+});
+
+ChampionshipTeam.belongsTo(Team, {
+  foreignKey: 'teamId',
+  as: 'team'
+});
+
 // Sincronizar as tabelas na ordem correta
 const syncDatabase = async () => {
   try {
     // Primeiro sincroniza as tabelas independentes
-    await User.sync();
-    await Team.sync();
-    await Class.sync();
+    await User.sync({ alter: true });
+    await Team.sync({ alter: true });
+    await Class.sync({ alter: true });
     
     // Depois sincroniza a tabela que depende das outras
-    await Player.sync();
+    await Player.sync({ alter: true });
 
-    await Championship.sync();
-    await Match.sync();
-    await MatchTeam.sync();
+    // Migração especial para adicionar coluna modality
+    const sequelize = Championship.sequelize;
+    const [results] = await sequelize.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'championships' AND column_name = 'modality';
+    `);
+    
+    if (results.length === 0) {
+      // Coluna não existe, vamos adicionar
+      console.log('Adicionando coluna modality à tabela championships...');
+      
+      // Primeiro criar o tipo ENUM se não existir
+      await sequelize.query(`
+        DO $$ BEGIN
+          CREATE TYPE "public"."enum_championships_modality" AS ENUM('Futebol', 'Vôlei');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+      `);
+      
+      // Adicionar coluna como nullable primeiro
+      await sequelize.query(`
+        ALTER TABLE championships 
+        ADD COLUMN modality "public"."enum_championships_modality";
+      `);
+      
+      // Atualizar registros existentes
+      await sequelize.query(`
+        UPDATE championships 
+        SET modality = 'Futebol' 
+        WHERE modality IS NULL;
+      `);
+      
+      // Agora tornar NOT NULL
+      await sequelize.query(`
+        ALTER TABLE championships 
+        ALTER COLUMN modality SET NOT NULL,
+        ALTER COLUMN modality SET DEFAULT 'Futebol';
+      `);
+      
+      console.log('Coluna modality adicionada com sucesso!');
+    } else {
+      // Coluna já existe, apenas sincronizar
+      await Championship.sync({ alter: true });
+      
+      // Garantir que registros NULL tenham valor padrão
+      await sequelize.query(`
+        UPDATE championships 
+        SET modality = 'Futebol' 
+        WHERE modality IS NULL;
+      `);
+    }
+
+    await Match.sync({ alter: true });
+    await MatchTeam.sync({ alter: true });
+    await ChampionshipTeam.sync({ alter: true });
     
     console.log('Todas as tabelas foram sincronizadas com sucesso!');
   } catch (error) {
@@ -85,4 +164,4 @@ const syncDatabase = async () => {
 // Executar a sincronização
 syncDatabase();
 
-export { User, Team, Player, Class, Championship, Match, MatchTeam };
+export { User, Team, Player, Class, Championship, Match, MatchTeam, ChampionshipTeam };

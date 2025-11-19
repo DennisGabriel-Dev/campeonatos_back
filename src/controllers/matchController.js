@@ -2,6 +2,7 @@ import Match from "../models/match.js";
 import Championship from "../models/championship.js";
 import MatchTeam from "../models/match_team.js";
 import Team from "../models/team.js";
+import CalculatePointsService from "../services/CalculatePointsService.js";
 
 const MatchController = {
   async getMatches(req, res) {
@@ -190,8 +191,19 @@ const MatchController = {
         }
       }
 
-      // Atualizar status da partida (1 = finalizada)
-      match.status = 1;
+      // Buscar modalidade do campeonato para calcular pontuação
+      const championship = await Championship.findByPk(match.championshipId);
+      
+      // Calcular pontuação baseada na modalidade
+      if (championship && championship.modality) {
+        await CalculatePointsService({
+          matchId: id,
+          championshipModality: championship.modality
+        });
+      }
+
+      // Atualizar status da partida (2 = finalizada)
+      match.status = 2;
       if (playDay) {
         match.playDay = new Date(playDay);
       } else if (!match.playDay) {
