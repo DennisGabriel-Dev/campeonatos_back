@@ -51,15 +51,23 @@ const ChampionshipController = {
 
       res.status(201).json(newChamp);
     } catch (error) {
+      console.error('Erro ao criar campeonato:', error);
       if (error.name === 'SequelizeValidationError') {
         res.status(400).json({ 
           error: 'Dados inválidos', 
           details: error.errors.map(err => err.message) 
         });
+      } else if (error.name === 'SequelizeDatabaseError') {
+        res.status(500).json({ 
+          error: 'Erro no banco de dados', 
+          details: error.message,
+          hint: 'Verifique se a estrutura da tabela está atualizada. Execute a sincronização do banco.'
+        });
       } else {
         res.status(500).json({ 
           error: 'Erro interno do servidor', 
-          details: error.message 
+          details: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
       }
     }

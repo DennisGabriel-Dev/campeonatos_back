@@ -27,6 +27,7 @@ const Championship = sequelize.define('Championship', {
   modality: {
     type: DataTypes.ENUM('Futebol', 'Vôlei'),
     allowNull: false,
+    defaultValue: 'Futebol',
     validate: {
       notEmpty: true
     }
