@@ -7,6 +7,7 @@ import classRoutes from './routes/classRoutes.js'
 import championshipRoutes from './routes/championshipRoutes.js'
 import matchRoutes from './routes/matchRoutes.js'
 import authRoutes from './routes/authRoutes.js'
+import reportsRoutes from './routes/reportsRoutes.js'
 import './models/associations.js'
 
 // Carrega as variáveis de ambiente
@@ -69,6 +70,7 @@ app.use('/players', playerRoutes)
 app.use('/classes', classRoutes)
 app.use('/championships', championshipRoutes)
 app.use('/matches', matchRoutes)
+app.use('/reports', reportsRoutes)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
