@@ -8,6 +8,7 @@ import championshipRoutes from './routes/championshipRoutes.js'
 import matchRoutes from './routes/matchRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import reportsRoutes from './routes/reportsRoutes.js'
+import publicRoutes from './routes/publicRoutes.js'
 import './models/associations.js'
 
 // Carrega as variáveis de ambiente
@@ -60,6 +61,9 @@ app.use(cors(corsOptions));
 console.log('CORS configurado para origens:', allowedOrigins);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL || 'não definida');
+
+// Rotas públicas (SEM autenticação)
+app.use('/public', publicRoutes)
 
 // Rotas de autenticação
 app.use('/auth', authRoutes)
