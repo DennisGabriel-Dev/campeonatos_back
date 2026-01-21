@@ -16,6 +16,19 @@ const Match = sequelize.define('Match', {
   },
   status: {
     type: DataTypes.INTEGER
+  },
+  round: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  bracketOrder: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  isKnockout: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'matches',

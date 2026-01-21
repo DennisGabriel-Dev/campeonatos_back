@@ -34,7 +34,10 @@ const MatchController = {
             ]
           }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [
+          ['createdAt', 'DESC'],
+          [{ model: MatchTeam, as: 'matchTeams' }, 'id', 'ASC']
+        ]
       });
 
       res.status(200).json(matches);
@@ -73,7 +76,8 @@ const MatchController = {
               }
             ]
           }
-        ]
+        ],
+        order: [[{ model: MatchTeam, as: 'matchTeams' }, 'id', 'ASC']]
       });
 
       if (match) {
@@ -230,7 +234,8 @@ const MatchController = {
               }
             ]
           }
-        ]
+        ],
+        order: [[{ model: MatchTeam, as: 'matchTeams' }, 'id', 'ASC']]
       });
 
       res.status(200).json({

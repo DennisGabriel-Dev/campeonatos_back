@@ -5,6 +5,8 @@ import Match from "../models/match.js";
 import MatchTeam from "../models/match_team.js";
 import GenerateMatches from "../services/GenerateMatchesService.js";
 
+const allowedFormats = ['Pontos Corridos', 'Mata-Mata'];
+
 const ChampionshipController = {
   async getChampionships(req, res) {
     try {
@@ -16,7 +18,7 @@ const ChampionshipController = {
             attributes: ['id', 'name', 'modality'],
             through: { attributes: [] }
           }
-        ]
+        ], order: [['createdAt', 'DESC']]
       });
       res.status(200).json(championships);
     } catch (error) {
@@ -29,7 +31,7 @@ const ChampionshipController = {
 
   async createChampionShip(req, res) {
     try {
-      const { name, year, modality } = req.body;
+      const { name, year, modality, format } = req.body;
 
       if (!name || !year || !modality) {
         return res.status(400).json({ 
@@ -43,10 +45,23 @@ const ChampionshipController = {
         });
       }
 
+      if (format !== undefined && !allowedFormats.includes(format)) {
+        return res.status(400).json({
+          error: 'Formato deve ser "Pontos Corridos" ou "Mata-Mata"'
+        });
+      }
+
+      if (await Championship.findOne({ where: { name } })) {
+        return res.status(400).json({
+          error: 'Já existe um campeonato com este nome'
+        });
+      }
+
       const newChamp = await Championship.create({ 
         name,
         year,
-        modality
+        modality,
+        format: format ?? undefined
       });
 
       res.status(201).json(newChamp);
@@ -103,7 +118,7 @@ const ChampionshipController = {
   async updateChampionship(req, res) {
     try {
       const { id } = req.params;
-      const { name, year, modality } = req.body;
+      const { name, year, modality, format } = req.body;
       
       const champItem = await Championship.findByPk(id);
       if (!champItem) {
@@ -117,11 +132,18 @@ const ChampionshipController = {
         });
       }
 
+      if (format !== undefined && !allowedFormats.includes(format)) {
+        return res.status(400).json({
+          error: 'Formato deve ser "Pontos Corridos" ou "Mata-Mata"'
+        });
+      }
+
       // Atualiza apenas os campos fornecidos
       const updatedData = {};
       if (name !== undefined) updatedData.name = name;
       if (year !== undefined) updatedData.year = year;
       if (modality !== undefined) updatedData.modality = modality;
+      if (format !== undefined) updatedData.format = format;
 
       await champItem.update(updatedData);
       
@@ -211,6 +233,266 @@ const ChampionshipController = {
       res.status(500).json({ 
         error: 'Erro interno do servidor', 
         details: error.message 
+      });
+    }
+  },
+
+  async generateKnockoutMatches(req, res) {
+    try {
+      const { id } = req.params;
+      const { pairs, round } = req.body ?? {};
+
+      const champItem = await Championship.findByPk(id);
+      if (!champItem) {
+        return res.status(404).json({ error: 'Campeonato não encontrado!' });
+      }
+
+      if (!Array.isArray(pairs) || pairs.length === 0) {
+        return res.status(400).json({
+          error: 'Informe os confrontos no formato: [{ homeTeamId, awayTeamId }]'
+        });
+      }
+
+      const normalizedRound = Number.isInteger(Number(round)) ? Number(round) : 1;
+      if (normalizedRound < 1) {
+        return res.status(400).json({ error: 'round deve ser >= 1' });
+      }
+
+      const normalizedPairs = pairs.map((pair) => ({
+        homeTeamId: Number(pair?.homeTeamId),
+        awayTeamId: Number(pair?.awayTeamId)
+      }));
+
+      const invalidPair = normalizedPairs.find(
+        (pair) =>
+          !Number.isInteger(pair.homeTeamId) ||
+          !Number.isInteger(pair.awayTeamId) ||
+          pair.homeTeamId <= 0 ||
+          pair.awayTeamId <= 0 ||
+          pair.homeTeamId === pair.awayTeamId
+      );
+
+      if (invalidPair) {
+        return res.status(400).json({
+          error: 'Cada confronto deve ter dois times válidos e diferentes'
+        });
+      }
+
+      const teamIds = normalizedPairs.flatMap((pair) => [pair.homeTeamId, pair.awayTeamId]);
+      const uniqueTeamIds = [...new Set(teamIds)];
+
+      if (uniqueTeamIds.length !== teamIds.length) {
+        return res.status(400).json({
+          error: 'Um time não pode aparecer em mais de um confronto na mesma rodada'
+        });
+      }
+
+      const existingTeams = await Team.findAll({
+        where: { id: uniqueTeamIds },
+        attributes: ['id']
+      });
+
+      if (existingTeams.length !== uniqueTeamIds.length) {
+        return res.status(404).json({
+          error: 'Alguns times informados não foram encontrados'
+        });
+      }
+
+      const transaction = await Match.sequelize.transaction();
+
+      try {
+        const createdMatches = [];
+
+        for (let index = 0; index < normalizedPairs.length; index += 1) {
+          const pair = normalizedPairs[index];
+          const match = await Match.create({
+            championshipId: champItem.id,
+            status: 0,
+            playDay: new Date(),
+            round: normalizedRound,
+            isKnockout: true,
+            bracketOrder: index + 1
+          }, { transaction });
+
+          await MatchTeam.bulkCreate([
+            { matchId: match.id, teamId: pair.homeTeamId },
+            { matchId: match.id, teamId: pair.awayTeamId }
+          ], { transaction });
+
+          createdMatches.push(match);
+        }
+
+        for (const teamId of uniqueTeamIds) {
+          await ChampionshipTeam.findOrCreate({
+            where: {
+              championshipId: champItem.id,
+              teamId
+            },
+            defaults: {
+              championshipId: champItem.id,
+              teamId
+            },
+            transaction
+          });
+        }
+
+        if (champItem.format !== 'Mata-Mata') {
+          await champItem.update({ format: 'Mata-Mata' }, { transaction });
+        }
+
+        await transaction.commit();
+
+        res.status(201).json({
+          message: 'Confrontos mata-mata gerados com sucesso',
+          success: true,
+          data: {
+            round: normalizedRound,
+            matchesCreated: createdMatches.length
+          }
+        });
+      } catch (error) {
+        await transaction.rollback();
+        res.status(500).json({
+          error: 'Erro ao gerar confrontos mata-mata',
+          details: error.message
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erro interno do servidor',
+        details: error.message
+      });
+    }
+  },
+
+  async advanceKnockoutRound(req, res) {
+    try {
+      const { id } = req.params;
+      const { round } = req.body ?? {};
+
+      const champItem = await Championship.findByPk(id);
+      if (!champItem) {
+        return res.status(404).json({ error: 'Campeonato não encontrado!' });
+      }
+
+      const normalizedRound = Number.isInteger(Number(round)) ? Number(round) : null;
+      if (!normalizedRound || normalizedRound < 1) {
+        return res.status(400).json({ error: 'round é obrigatório e deve ser >= 1' });
+      }
+
+      const nextRound = normalizedRound + 1;
+
+      const existingNextRound = await Match.count({
+        where: {
+          championshipId: champItem.id,
+          isKnockout: true,
+          round: nextRound
+        }
+      });
+
+      if (existingNextRound > 0) {
+        return res.status(409).json({
+          error: 'Já existem partidas cadastradas para a próxima rodada'
+        });
+      }
+
+      const matches = await Match.findAll({
+        where: {
+          championshipId: champItem.id,
+          isKnockout: true,
+          round: normalizedRound,
+          status: 2
+        },
+        include: [
+          {
+            model: MatchTeam,
+            as: 'matchTeams'
+          }
+        ],
+        order: [['bracketOrder', 'ASC'], ['id', 'ASC']]
+      });
+
+      if (matches.length === 0) {
+        return res.status(400).json({
+          error: 'Não há partidas finalizadas nesta rodada'
+        });
+      }
+
+      const winners = [];
+
+      for (const match of matches) {
+        if (match.matchTeams.length !== 2) {
+          return res.status(400).json({
+            error: 'Cada partida deve ter exatamente 2 times'
+          });
+        }
+
+        const [teamA, teamB] = match.matchTeams;
+        const goalsA = teamA.goalsTeam ?? 0;
+        const goalsB = teamB.goalsTeam ?? 0;
+
+        if (goalsA === goalsB) {
+          return res.status(400).json({
+            error: 'Empates não são permitidos no mata-mata',
+            details: `Partida ${match.id} terminou empatada`
+          });
+        }
+
+        winners.push(goalsA > goalsB ? teamA.teamId : teamB.teamId);
+      }
+
+      if (winners.length % 2 !== 0) {
+        return res.status(400).json({
+          error: 'Quantidade de vencedores inválida para formar confrontos'
+        });
+      }
+
+      const transaction = await Match.sequelize.transaction();
+
+      try {
+        const createdMatches = [];
+
+        for (let index = 0; index < winners.length; index += 2) {
+          const homeTeamId = winners[index];
+          const awayTeamId = winners[index + 1];
+          const match = await Match.create({
+            championshipId: champItem.id,
+            status: 0,
+            playDay: new Date(),
+            round: nextRound,
+            isKnockout: true,
+            bracketOrder: (index / 2) + 1
+          }, { transaction });
+
+          await MatchTeam.bulkCreate([
+            { matchId: match.id, teamId: homeTeamId },
+            { matchId: match.id, teamId: awayTeamId }
+          ], { transaction });
+
+          createdMatches.push(match);
+        }
+
+        await transaction.commit();
+
+        res.status(201).json({
+          message: 'Próxima rodada criada com sucesso',
+          success: true,
+          data: {
+            round: nextRound,
+            matchesCreated: createdMatches.length
+          }
+        });
+      } catch (error) {
+        await transaction.rollback();
+        res.status(500).json({
+          error: 'Erro ao criar próxima rodada',
+          details: error.message
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erro interno do servidor',
+        details: error.message
       });
     }
   },

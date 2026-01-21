@@ -138,6 +138,7 @@ const syncDatabase = async () => {
         ALTER COLUMN modality SET DEFAULT 'Futebol';
       `);
       
+      await Championship.sync({ alter: true });
       console.log('Coluna modality adicionada com sucesso!');
     } else {
       // Coluna já existe, apenas sincronizar
