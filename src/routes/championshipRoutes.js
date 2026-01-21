@@ -14,6 +14,8 @@ router.get('/:id/teams', ChampionshipController.getChampionshipTeams);
 router.post('/:id/teams', ChampionshipController.addTeamToChampionship);
 router.delete('/:id/teams/:teamId', ChampionshipController.removeTeamFromChampionship);
 router.post('/:id/generate-matches', ChampionshipController.generateMatches);
+router.post('/:id/knockout-matches', ChampionshipController.generateKnockoutMatches);
+router.post('/:id/knockout-advance', ChampionshipController.advanceKnockoutRound);
 router.get('/:id', ChampionshipController.getChampionshipById);
 router.put('/:id', ChampionshipController.updateChampionship);
 router.patch('/:id', ChampionshipController.updateChampionship);

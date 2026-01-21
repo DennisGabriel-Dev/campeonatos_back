@@ -31,6 +31,14 @@ const Championship = sequelize.define('Championship', {
     validate: {
       notEmpty: true
     }
+  },
+  format: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Pontos Corridos',
+    validate: {
+      isIn: [['Pontos Corridos', 'Mata-Mata']]
+    }
   }
 }, {
   tableName: 'championships',
