@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import swaggerUi from 'swagger-ui-express'
+import swaggerSpec from './config/swagger.js'
 import teamRoutes from './routes/teamRoutes.js'
 import playerRoutes from './routes/playerRoutes.js'
 import classRoutes from './routes/classRoutes.js'
@@ -57,10 +59,17 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Campeonatos API Docs'
+}));
+
 // Log para debug
 console.log('CORS configurado para origens:', allowedOrigins);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL || 'não definida');
+console.log('Swagger disponível em: http://localhost:4000/api-docs');
 
 // Rotas públicas (SEM autenticação)
 app.use('/public', publicRoutes)
